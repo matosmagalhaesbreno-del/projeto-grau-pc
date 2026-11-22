@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Grau Livre</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<canvas id="game"></canvas>
+
+<!-- HUD -->
+<div id="hud" class="hidden">
+  <div id="mission" class="panel">
+    <div class="label">MISSÃO <span id="missionNum"></span></div>
+    <div id="missionText"></div>
+    <div class="bar"><div id="missionBar"></div></div>
+  </div>
+
+  <div id="wallet" class="panel">
+    <div class="money">R$ <span id="money">0</span></div>
+    <div class="small">Melhor grau: <span id="bestTime">0.0</span>s · <span id="bestDist">0</span>m</div>
+  </div>
+
+  <div id="combo" class="hidden">
+    <div id="comboPts">0</div>
+    <div id="comboMult">x1</div>
+    <div id="comboInfo">0.0s · 0m</div>
+    <div id="comboZone">ZONA DO GRAU</div>
+  </div>
+
+  <canvas id="minimap" width="180" height="180"></canvas>
+
+  <div id="dash" class="panel">
+    <canvas id="gauge" width="170" height="170"></canvas>
+    <div id="speedBox">
+      <div id="speed">0</div>
+      <div class="small">km/h · <span id="gear">N</span></div>
+      <div id="angle">0°</div>
+    </div>
+  </div>
+
+  <div id="toasts"></div>
+  <div id="crash" class="hidden">CAIU!</div>
+  <div id="keyhint">W acelera · ESPAÇO puxa o grau · S freio traseiro · A/D vira · C câmera · ESC pausa</div>
+</div>
+
+<!-- Menu principal -->
+<div id="menu" class="screen">
+  <div class="menuBox">
+    <h1>GRAU<span>LIVRE</span></h1>
+    <p class="tag">Empina, equilibra, raspa e não cai.</p>
+    <button data-act="play" class="primary">JOGAR</button>
+    <button data-act="garage">GARAGEM</button>
+    <button data-act="help">CONTROLES</button>
+    <div class="small dim" id="menuMoney"></div>
+  </div>
+</div>
+
+<!-- Pausa -->
+<div id="pause" class="screen hidden">
+  <div class="menuBox">
+    <h2>PAUSADO</h2>
+    <button data-act="resume" class="primary">CONTINUAR</button>
+    <button data-act="garage">GARAGEM</button>
+    <button data-act="night">ALTERNAR DIA / NOITE</button>
+    <button data-act="sound">SOM: <span id="soundState">LIGADO</span></button>
+    <button data-act="help">CONTROLES</button>
+    <button data-act="reset" class="danger">APAGAR PROGRESSO</button>
+  </div>
+</div>
+
+<!-- Controles -->
+<div id="help" class="screen hidden">
+  <div class="menuBox wide">
+    <h2>CONTROLES</h2>
+    <table>
+      <tr><td><kbd>W</kbd> / <kbd>↑</kbd></td><td>Acelerar (também levanta a frente)</td></tr>
+      <tr><td><kbd>ESPAÇO</kbd></td><td>Puxar o grau (jogar o corpo pra trás)</td></tr>
+      <tr><td><kbd>S</kbd> / <kbd>↓</kbd></td><td>Freio traseiro: abaixa a frente / freia</td></tr>
+      <tr><td><kbd>A</kbd> <kbd>D</kbd> / <kbd>←</kbd> <kbd>→</kbd></td><td>Virar</td></tr>
+      <tr><td><kbd>C</kbd></td><td>Trocar câmera (atrás, lateral, alta, primeira pessoa)</td></tr>
+      <tr><td><kbd>N</kbd></td><td>Dia / noite</td></tr>
+      <tr><td><kbd>R</kbd></td><td>Reposicionar a moto</td></tr>
+      <tr><td><kbd>M</kbd></td><td>Som liga/desliga</td></tr>
+      <tr><td><kbd>ESC</kbd></td><td>Pausa</td></tr>
+      <tr><td>Controle</td><td>RT acelera · LT freia · A puxa o grau · analógico vira · Y câmera · START pausa</td></tr>
+    </table>
+    <p class="small">Dica: segure <b>W</b> para empinar e dê toques no <b>ESPAÇO</b> para subir mais. Mantenha o ponteiro na faixa verde
+    (45°–80°) para pontuar em dobro. Passou de 95°? Cai pra trás. Use o <b>S</b> para salvar o grau.
+    Passar raspando nos carros durante o grau dá bônus.</p>
+    <button data-act="back" class="primary">VOLTAR</button>
+  </div>
+</div>
+
+<!-- Garagem -->
+<div id="garage" class="screen hidden">
+  <div id="garagePanel">
+    <div class="gHead">
+      <h2>GARAGEM</h2>
+      <div class="money">R$ <span id="gMoney">0</span></div>
+    </div>
+    <div id="bikeList"></div>
+    <div id="bikeDetail"></div>
+    <button data-act="back" class="primary">VOLTAR</button>
+  </div>
+</div>
+
+<script src="vendor/three.min.js"></script>
+<script src="js/game.js"></script>
+</body>
+</html>
