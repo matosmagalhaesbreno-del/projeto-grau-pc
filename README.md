@@ -2,6 +2,14 @@
 
 Jogo 3D de grau de moto para PC. Você pilota motos reais por uma cidade litorânea brasileira: avenida beira-mar, calçadão de ondas, praia, trânsito e prédios. Dá grau, raspa a rabeta, faz stoppie, corta carros e fecha combos.
 
+![Grau na avenida beira-mar](docs/screenshots/grau-avenida.png)
+
+| | |
+|---|---|
+| ![Garagem](docs/screenshots/garagem.png) | ![Noite na orla](docs/screenshots/noite.png) |
+
+*Capturas feitas com renderização por software (sem GPU). Numa placa de vídeo real a nitidez é maior, porque a resolução dinâmica não precisa reduzir a imagem.*
+
 ## Como rodar
 
 **App desktop (recomendado: GPU dedicada, VSync configurável, FPS livre):**
@@ -79,6 +87,21 @@ Os modelos 3D foram gerados por script no **Blender** (`tools/blender/`), a part
   - física em passo fixo de 240 Hz;
   - resolução dinâmica que segura o FPS alvo.
 - Presets Baixo, Médio, Alto e Ultra, FPS alvo de 60 a 240 ou livre e escala de resolução.
+
+## Trocando por modelos profissionais
+
+Os modelos gerados por script ficam longe de um modelo feito à mão por um artista. Para chegar mais perto do nível de um jogo AAA, substitua `assets/models/opt/<moto>.glb` por um modelo comprado ou licenciado (Sketchfab, CGTrader, TurboSquid), mantendo esta hierarquia de nós no glTF:
+
+```
+bike (extras: wheelbase, rake, r_front, r_rear, seat_h, style)
+ ├─ body
+ ├─ steer ─ fork_lower ─ wheel_front
+ │        └─ grip_L, grip_R      (pontos das mãos)
+ ├─ swingarm ─ wheel_rear
+ └─ seat, peg_L, peg_R, tail_tip (pontos do piloto e da rabeta)
+```
+
+O jogo calcula sozinho o ângulo da rabeta a partir da geometria e empacota os materiais para manter o desempenho. Depois de trocar, rode `npm run build`.
 
 ## Estrutura
 
