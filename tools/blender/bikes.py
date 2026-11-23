@@ -592,14 +592,20 @@ def build_engine(S, G):
     top = G['tank_top'] - 0.24
     # cárter
     cz = gc + 0.13
-    parts.append(box('crankcase', (0, yc - 0.03, cz), (ew, (y1 - y0) * 0.85, 0.22), mat('engine'), bevel=0.035, segments=3))
+    cw = ew * (0.78 if st == 'sport' else 1.0)
+    parts.append(box('crankcase', (0, yc - 0.03, cz), (cw, (y1 - y0) * 0.85, 0.22), mat('engine'), bevel=0.035, segments=3))
     parts.append(box('sump', (0, yc, gc + 0.03), (ew * 0.7, (y1 - y0) * 0.55, 0.08), mat('engine'), bevel=0.025, segments=3))
     # tampas laterais
     cxo = min(ew / 2 - 0.005, 0.17 if st == 'sport' else 0.25)
-    parts.append(lathe_axis('clutch_cover', [(0.0, 0.0), (0.08, 0.0), (0.085, 0.012), (0.07, 0.022), (0.0, 0.024)], mat('engine_cover'),
-                            Vector((cxo, yc - 0.03, cz + 0.02)), Vector((1, 0, 0)), segs=32))
-    parts.append(lathe_axis('stator_cover', [(0.0, 0.0), (0.07, 0.0), (0.074, 0.012), (0.058, 0.02), (0.0, 0.022)], mat('engine_cover'),
-                            Vector((-cxo, yc + 0.02, cz + 0.0)), Vector((-1, 0, 0)), segs=32))
+    cc = lathe_axis('clutch_cover', [(0.0, 0.0), (0.085, 0.0), (0.088, 0.004), (0.087, 0.013), (0.076, 0.018), (0.03, 0.019), (0.0, 0.019)], mat('engine_cover'),
+                    Vector((cxo, yc - 0.03, cz + 0.02)), Vector((1, 0, 0)), segs=32, sharp_angle=30)
+    parts.append(cc)
+    parts.append(lathe_axis('stator_cover', [(0.0, 0.0), (0.072, 0.0), (0.075, 0.004), (0.074, 0.012), (0.062, 0.016), (0.0, 0.016)], mat('engine_cover'),
+                            Vector((-cxo, yc + 0.02, cz + 0.0)), Vector((-1, 0, 0)), segs=32, sharp_angle=30))
+    for k in range(6):
+        a = k * math.pi / 3
+        parts.append(cylinder('bolt', Vector((cxo + 0.017, yc - 0.03 + 0.078 * math.cos(a), cz + 0.02 + 0.078 * math.sin(a))),
+                              Vector((cxo + 0.024, yc - 0.03 + 0.078 * math.cos(a), cz + 0.02 + 0.078 * math.sin(a))), 0.006, mat('steel'), segs=6))
     if eng in ('inline4', 'triple'):
         tilt = math.radians(32)
         ax = Vector((0, math.sin(tilt), math.cos(tilt)))
@@ -844,11 +850,14 @@ def body_common_tail(S, G, style_mat='paint_main'):
                                      dict(y=sy - 0.12, z=sh + 0.01, wt=0.12, ht=0.035, hb=0.04, n=3),
                                      dict(y=sy - 0.16, z=sh + 0.04, wt=0.10, ht=0.02, hb=0.04, n=3)], mat('seat'), N=16))
         # rabeta afilada
-        tsec = [dict(y=sy + 0.02, z=sh - 0.07, wt=0.12, ht=0.045, hb=0.05, n=3),
-                dict(y=sy - 0.16, z=sh - 0.015, wt=0.10, ht=0.05, hb=0.04, n=3),
-                dict(y=0.04, z=tail.z - 0.035, wt=0.07, ht=0.04, hb=0.035, n=3),
-                dict(y=tail.y + 0.06, z=tail.z - 0.005, wt=0.045, ht=0.025, hb=0.025, n=3),
-                dict(y=tail.y, z=tail.z, wt=0.025, ht=0.014, hb=0.014, n=3)]
+        tsec = [dict(y=sy + 0.04, z=sh - 0.09, wt=0.12, ht=0.05, hb=0.07, n=3.6),
+                dict(y=sy - 0.14, z=sh - 0.04, wt=0.115, ht=0.07, hb=0.09, n=3.6),
+                dict(y=0.10, z=tail.z - 0.09, wt=0.095, ht=0.075, hb=0.09, n=3.6),
+                dict(y=tail.y + 0.07, z=tail.z - 0.04, wt=0.06, ht=0.045, hb=0.06, n=3.4),
+                dict(y=tail.y, z=tail.z - 0.03, wt=0.035, ht=0.025, hb=0.03, n=3)]
+        # capa da garupa (banco do passageiro)
+        parts.append(loft_y('pillion', [dict(y=sy - 0.13, z=sh + 0.035, wt=0.10, ht=0.02, hb=0.02, n=3.4), dict(y=0.12, z=tail.z - 0.015, wt=0.085, ht=0.02, hb=0.02, n=3.4),
+                                        dict(y=tail.y + 0.12, z=tail.z + 0.005, wt=0.06, ht=0.015, hb=0.015, n=3.2)], mat('paint_main'), N=16))
         parts.append(loft_y('tail', tsec, mat(style_mat), N=16))
         parts.append(box('tail_light', (0, tail.y + 0.02, tail.z - 0.025), (0.09, 0.03, 0.018), mat('light_tail'), bevel=0.006))
         # suporte de placa
@@ -907,7 +916,7 @@ def build_body_sport(S, G):
     nose_y = Af.y + 0.06
     top_z = T.z - 0.02
     # tanque
-    parts.append(loft_y('tank', tank_sections(S, G, 0.18, n=3.4), mat('paint_main'), N=18))
+    parts.append(loft_y('tank', tank_sections(S, G, 0.165, n=4.2), mat('paint_main'), N=18))
     # bico (carenagem superior)
     nose = [dict(y=Af.y + 0.14, z=top_z - 0.17, wt=0.03, ht=0.012, hb=0.03, n=2.2),
             dict(y=Af.y + 0.07, z=top_z - 0.13, wt=0.11, ht=0.04, hb=0.06, n=2.6),
@@ -934,7 +943,7 @@ def build_body_sport(S, G):
     # carenagens laterais: a borda dianteira contorna a roda, a traseira é inclinada
     Rf = G['Rf']
     ztop_f, ztop_r = top_z - 0.11, S['seat_h'] - 0.09
-    zbot = G['gc'] + 0.13
+    zbot = G['gc'] + 0.05
     nose_join = Af.y - 0.06
     rows = []
     NU, NV = 10, 9
@@ -961,9 +970,9 @@ def build_body_sport(S, G):
         parts.append(loft_y('vent', [dict(x=s * 0.215, y=H.y - 0.15, z=top_z - 0.24, wt=0.012, ht=0.03, n=3), dict(x=s * 0.215, y=H.y - 0.33, z=top_z - 0.30, wt=0.012, ht=0.05, n=3)],
                             mat('plastic'), N=10, subsurf=1))
     # carenagem inferior (barriga)
-    belly = [dict(y=G['eng_front'] + 0.02, z=G['gc'] + 0.12, wt=0.18, ht=0.06, hb=0.07, n=3),
-             dict(y=G['eng_front'] - 0.20, z=G['gc'] + 0.08, wt=0.215, ht=0.08, hb=0.07, n=3.4),
-             dict(y=G['P'].y + 0.06, z=G['gc'] + 0.10, wt=0.17, ht=0.06, hb=0.06, n=3)]
+    belly = [dict(y=G['eng_front'] + 0.02, z=G['gc'] + 0.12, wt=0.19, ht=0.06, hb=0.07, n=3),
+             dict(y=G['eng_front'] - 0.20, z=G['gc'] + 0.08, wt=0.23, ht=0.09, hb=0.07, n=3.6),
+             dict(y=G['P'].y + 0.06, z=G['gc'] + 0.10, wt=0.18, ht=0.07, hb=0.06, n=3.2)]
     parts.append(loft_y('belly', belly, mat('paint_second'), N=16))
     # retrovisores na carenagem
     for s in (-1, 1):
@@ -1133,7 +1142,7 @@ def band_planes(k, values, y0=1.0):
 @livery('m')
 def _liv_m(S, G):
     k = 0.55
-    lo = G['gc'] + 0.10
+    lo = G['gc'] + 0.02
 
     def fn(c, n):
         u = c.z - (c.y - 1.0) * k
