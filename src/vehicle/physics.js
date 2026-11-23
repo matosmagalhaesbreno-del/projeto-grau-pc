@@ -126,8 +126,10 @@ export class BikePhysics {
     // embreagem automática em baixa velocidade (não deixa o motor morrer)
     const wWheelSide = this.wR * ratio;
     let cEff = this.clutch;
-    const launch = clamp((this.wE - this.wIdle * 1.1) / (this.wIdle * 1.6), 0, 1);
-    if (wWheelSide < this.wIdle * 1.15) cEff = Math.min(cEff, Math.max(launch, thr > 0.05 ? 0.25 : 0.0));
+    // arrancada: o motor sobe até o giro de saída e a embreagem acopla proporcionalmente
+    const wLaunch = this.wIdle + (this.wRed * 0.42 - this.wIdle) * Math.max(thr, 0.15);
+    const launch = clamp((this.wE - this.wIdle * 1.05) / Math.max(1, wLaunch - this.wIdle * 1.05), 0, 1);
+    if (wWheelSide < this.wIdle * 1.15) cEff = Math.min(cEff, thr > 0.05 ? launch * 0.85 : 0.0);
 
     // ---------------- motor ----------------
     let Te = this.torque(this.wE) * thr;

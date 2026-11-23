@@ -877,15 +877,16 @@ def body_common_tail(S, G, style_mat='paint_main'):
         parts.append(box('tail_light', (0, tail.y - 0.005, tail.z - 0.07), (0.11 if st != 'naked' else 0.08, 0.03, 0.035), mat('light_tail'), bevel=0.01, segments=3))
         if st in ('commuter', 'trail', 'adventure'):
             # para-lama traseiro com placa
-            fender = [dict(y=tail.y + 0.05, z=tail.z - 0.12, wt=0.06, ht=0.004), dict(y=tail.y - 0.08, z=tail.z - 0.20, wt=0.055, ht=0.004),
-                      dict(y=tail.y - 0.10, z=tail.z - 0.32, wt=0.05, ht=0.004)]
+            # rabeta curta (estilo grau): placa alta e recolhida
+            fender = [dict(y=tail.y + 0.08, z=tail.z - 0.10, wt=0.06, ht=0.004), dict(y=tail.y - 0.02, z=tail.z - 0.14, wt=0.055, ht=0.004),
+                      dict(y=tail.y - 0.04, z=tail.z - 0.19, wt=0.05, ht=0.004)]
             parts.append(loft_y('rfender', fender, mat('plastic'), N=10, subsurf=1))
-            pl = Vector((0, tail.y - 0.105, tail.z - 0.26))
+            pl = Vector((0, tail.y - 0.045, tail.z - 0.17))
         else:
             pl = Vector((0, tail.y + 0.02, S['tail_h'] - 0.27))
             parts.append(tube('plate_arm', [Vector((0, tail.y + 0.2, tail.z - 0.1)), pl + Vector((0, 0.03, 0.08))], 0.012, mat('plastic'), N=8))
         parts.append(box('plate_back', (pl.x, pl.y + 0.006, pl.z), (0.215, 0.01, 0.145), mat('plastic'), bevel=0.004))
-        parts.append(plate_quad('plate', (pl.x, pl.y - 0.001, pl.z), 0.20, 0.135, mat('plate'), tilt=math.radians(-5)))
+        parts.append(plate_quad('plate', (pl.x, pl.y - 0.001, pl.z), 0.20, 0.135, mat('plate'), tilt=math.radians(-12)))
         for s in (-1, 1):
             p0 = Vector((s * 0.05, tail.y + 0.04, tail.z - 0.1))
             p1 = p0 + Vector((s * 0.09, 0, 0))

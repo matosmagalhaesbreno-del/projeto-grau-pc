@@ -262,7 +262,7 @@ function applySetting(k, v) {
 // ---------------------------------------------------------------------------
 // Laço principal
 const PHYS_DT = 1 / 240;
-let acc = 0, last = performance.now(), fpsEma = 60, hudTimer = 0, lastRender = 0;
+let acc = 0, last = performance.now(), fpsEma = 60, hudTimer = 0, lastRender = 0, expo = 1;
 const tmpV = new THREE.Vector3(), tmpF = new THREE.Vector3();
 
 function loop(now) {
@@ -282,7 +282,61 @@ function loop(now) {
   const frozen = state === 'pause' || state === 'settings' && prevState === 'pause' || state === 'controls' && prevState === 'pause';
   const inp = playing ? input.state : { throttle: 0, frontBrake: 0, rearBrake: state === 'menu' || state === 'garage' ? 1 : 0, steer: 0, lean: 0, clutch: false };
 
-  if (!frozen) {
+  if (!frozen) simulate(dt, inp, playing);
+
+  // feed de manobras
+  for (const e of tricks.events) {
+    ui.feed(e.text, e.cls);
+    if (e.sound === 'trick') audio.chime(820, 0.12, 0.06);
+    else if (e.sound === 'bank') audio.chime(990, 0.25, 0.09);
+    else if (e.sound === 'cut') audio.chime(1240, 0.1, 0.07);
+  }
+  tricks.events.length = 0;
+
+  bike.night = atmo.state.night;
+  bike.update(dt, phys, rig.mode);
+  if (state === 'garage') { garageAngle += dt * 0.25 + (input.mouse.down ? input.mouse.dx * 0.006 : 0); }
+  rig.update(dt, phys, bike, input, (x, z) => city.surfaceAt(x, z).h, { menu: state === 'menu' || (state === 'settings' || state === 'controls') && prevState === 'menu', garage: state === 'garage', garageAngle, collide: (x, z, r) => city.collide(x, z, r) });
+  atmo.update(frozen ? 0 : dt, tmpV.set(phys.x, phys.y, phys.z));
+  // exposição automática (adaptação do olho) pelo horário: compensa fim de tarde e noite
+  {
+    const A = atmo.state;
+    const target = 1.0 + A.golden * 0.55 + (1 - A.day) * 0.9 + A.night * 0.6;
+    expo += (target - expo) * Math.min(1, dt * 1.5);
+    R.grade.uniforms.get('uExposure').value = expo;
+  }
+  atmo.sky.position.copy(camera.position);
+  props.update(dt, atmo.state.night, camera.position, R.quality);
+  fx.update(frozen ? 0 : dt, 0.25 + atmo.state.day * 0.75);
+  const spec = phys.spec;
+  audio.update(dt, {
+    active: (state === 'play' || state === 'menu' || state === 'garage'), rpm: phys.rpm, redline: spec.redline, throttle: phys.throttle, prevThrottle: phys._prevThr || 0,
+    limiter: phys.limiter, speed: phys.v, skid: Math.max(phys.spin * 0.7, phys.brakingR > 0.5 && phys.v > 6 ? 0.6 : 0), scrape: phys.tail || phys.scrapePeg,
+    escape: (bikeSave(spec.key).upgrades.escape || 0) > 0, inMenu: state !== 'play', seaDist: Math.max(0, SAND_X0 + 30 - phys.x),
+  });
+  phys._prevThr = phys.throttle;
+
+  // HUD a ~60 Hz
+  hudTimer -= dt;
+  if (state === 'play' && hudTimer <= 0) {
+    hudTimer = 1 / 60;
+    const info = R.r.info;
+    ui.updateHud(1 / 60, {
+      speed: phys.v, gear: phys.gear, rpm: phys.rpm, redline: spec.redline, throttle: phys.throttle,
+      pitchDeg: phys.pitch * 57.2958, balanceDeg: phys.balanceAngle * 57.2958, tailDeg: phys.tailAngle * 57.2958,
+      money: save.money, hour: atmo.hour, combo: tricks.combo, mission, missionProgress,
+      showFps: save.settings.showFps, fps: fpsEma, drawCalls: info.render.calls, tris: info.render.triangles, resScale: R.resScale,
+    });
+    ui.minimap(phys, traffic.cars, phys.h);
+  }
+
+  R.render(dt, Math.min(1, phys.v / 40));
+  if (state === 'play') R.adapt(frameMs);
+  input.endFrame();
+}
+
+function simulate(dt, inp, playing) {
+  {
     acc += dt;
     let steps = 0;
     while (acc >= PHYS_DT && steps < 12) {
@@ -323,48 +377,6 @@ function loop(now) {
     effects(dt);
   }
 
-  // feed de manobras
-  for (const e of tricks.events) {
-    ui.feed(e.text, e.cls);
-    if (e.sound === 'trick') audio.chime(820, 0.12, 0.06);
-    else if (e.sound === 'bank') audio.chime(990, 0.25, 0.09);
-    else if (e.sound === 'cut') audio.chime(1240, 0.1, 0.07);
-  }
-  tricks.events.length = 0;
-
-  bike.night = atmo.state.night;
-  bike.update(dt, phys, rig.mode);
-  if (state === 'garage') { garageAngle += dt * 0.25 + (input.mouse.down ? input.mouse.dx * 0.006 : 0); }
-  rig.update(dt, phys, bike, input, (x, z) => city.surfaceAt(x, z).h, { menu: state === 'menu' || (state === 'settings' || state === 'controls') && prevState === 'menu', garage: state === 'garage', garageAngle, collide: (x, z, r) => city.collide(x, z, r) });
-  atmo.update(frozen ? 0 : dt, tmpV.set(phys.x, phys.y, phys.z));
-  atmo.sky.position.copy(camera.position);
-  props.update(dt, atmo.state.night, camera.position, R.quality);
-  fx.update(frozen ? 0 : dt, 0.25 + atmo.state.day * 0.75);
-  const spec = phys.spec;
-  audio.update(dt, {
-    active: (state === 'play' || state === 'menu' || state === 'garage'), rpm: phys.rpm, redline: spec.redline, throttle: phys.throttle, prevThrottle: phys._prevThr || 0,
-    limiter: phys.limiter, speed: phys.v, skid: Math.max(phys.spin * 0.7, phys.brakingR > 0.5 && phys.v > 6 ? 0.6 : 0), scrape: phys.tail || phys.scrapePeg,
-    escape: (bikeSave(spec.key).upgrades.escape || 0) > 0, inMenu: state !== 'play', seaDist: Math.max(0, SAND_X0 + 30 - phys.x),
-  });
-  phys._prevThr = phys.throttle;
-
-  // HUD a ~60 Hz
-  hudTimer -= dt;
-  if (state === 'play' && hudTimer <= 0) {
-    hudTimer = 1 / 60;
-    const info = R.r.info;
-    ui.updateHud(1 / 60, {
-      speed: phys.v, gear: phys.gear, rpm: phys.rpm, redline: spec.redline, throttle: phys.throttle,
-      pitchDeg: phys.pitch * 57.2958, balanceDeg: phys.balanceAngle * 57.2958, tailDeg: phys.tailAngle * 57.2958,
-      money: save.money, hour: atmo.hour, combo: tricks.combo, mission, missionProgress,
-      showFps: save.settings.showFps, fps: fpsEma, drawCalls: info.render.calls, tris: info.render.triangles, resScale: R.resScale,
-    });
-    ui.minimap(phys, traffic.cars, phys.h);
-  }
-
-  R.render(dt, Math.min(1, phys.v / 40));
-  if (state === 'play') R.adapt(frameMs);
-  input.endFrame();
 }
 
 function handleKeys() {
@@ -446,4 +458,7 @@ boot().catch((e) => {
   console.error(e);
   ui.loading(1, 'Erro ao iniciar: ' + (e && e.message ? e.message : e));
 });
-window.__game = { THREE, rig, get city() { return city; }, get phys() { return phys; }, get state() { return state; }, R, tricks, get traffic() { return traffic; }, get atmo() { return atmo; }, goPlay, goMenu, get bike() { return bike; }, get save() { return save; } };
+window.__game = {
+  // simulação determinística para testes: roda `sec` segundos com a entrada dada (sem renderizar)
+  simulate(sec, inp, step = 1 / 60) { const full = { throttle: 0, frontBrake: 0, rearBrake: 0, steer: 0, lean: 0, clutch: false, analog: true, ...inp }; for (let t = 0; t < sec; t += step) { GLOBAL.uTime.value += step; simulate(step, full, true); } },
+  THREE, rig, get city() { return city; }, get phys() { return phys; }, get state() { return state; }, R, tricks, get traffic() { return traffic; }, get atmo() { return atmo; }, goPlay, goMenu, get bike() { return bike; }, get save() { return save; } };

@@ -253,7 +253,7 @@ export class Atmosphere {
     this.sun.target.position.copy(center);
     this.sun.target.updateMatrixWorld();
 
-    this.scene.environmentIntensity = lerp(0.22, 0.75, day) + golden * 0.1;
+    this.scene.environmentIntensity = lerp(0.35, 0.75, day) + golden * 0.35;
     this.scene.backgroundIntensity = 1;
 
     // regenerar o mapa de ambiente quando o horário muda o suficiente

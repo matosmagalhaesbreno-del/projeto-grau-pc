@@ -92,6 +92,18 @@ export class Traffic {
   }
 
   buildInstances() {
+    // feixes dos faróis no chão (aditivos, só à noite e nos carros próximos)
+    const cv = document.createElement('canvas'); cv.width = 64; cv.height = 128;
+    const cx = cv.getContext('2d');
+    const gr = cx.createRadialGradient(32, 0, 0, 32, 0, 128);
+    gr.addColorStop(0, 'rgba(255,240,215,0.9)'); gr.addColorStop(0.4, 'rgba(255,235,200,0.35)'); gr.addColorStop(1, 'rgba(255,230,190,0)');
+    cx.fillStyle = gr; cx.fillRect(0, 0, 64, 128);
+    const bt = new THREE.CanvasTexture(cv); bt.colorSpace = THREE.SRGBColorSpace;
+    const beamGeo = new THREE.PlaneGeometry(4.2, 13); beamGeo.rotateX(-Math.PI / 2); beamGeo.translate(0, 0.03, 6.5);
+    this.beamMat = new THREE.MeshBasicMaterial({ map: bt, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0 });
+    this.beams = new THREE.InstancedMesh(beamGeo, this.beamMat, this.cars.length);
+    this.beams.frustumCulled = false; this.beams.count = 0; this.beams.renderOrder = 3;
+    this.root.add(this.beams);
     this.carMat = packedMaterial({ globals: GLOBAL, instanced: true });
     this.wheelMat = packedMaterial({ globals: GLOBAL });
     this.CU = this.carMat.userData.U;
@@ -142,6 +154,19 @@ export class Traffic {
     const n2 = near * near, f2 = far * far;
     const cnt = this.inst.map(() => [0, 0]);
     const all = this.cars.concat(this.parked);
+    let nb = 0;
+    if (night > 0.05) {
+      const br = (quality.shadowDist * 1.6) ** 2;
+      for (const c of this.cars) {
+        const dx = c.x - cam.x, dz = c.z - cam.z;
+        if (dx * dx + dz * dz > br) continue;
+        tmpQ.setFromAxisAngle(YAX, c.h);
+        tmpM.compose(tmpV.set(c.x + Math.sin(c.h) * 2.0, 0, c.z + Math.cos(c.h) * 2.0), tmpQ, tmpS);
+        this.beams.setMatrixAt(nb++, tmpM);
+      }
+    }
+    this.beams.count = nb; this.beams.instanceMatrix.needsUpdate = true;
+    this.beamMat.opacity = night * 0.7;
     for (const o of all) {
       const dx = o.x - cam.x, dz = o.z - cam.z, d2 = dx * dx + dz * dz;
       if (d2 > f2) continue;

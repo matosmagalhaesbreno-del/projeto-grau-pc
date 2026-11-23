@@ -70,6 +70,7 @@ export class City {
     this.buildGround();
     this.buildBuildings();
     this.buildMarkings();
+    this.buildPlaza();
     this.buildOcean();
     this.buildHills();
     this.buildNetwork();
@@ -372,6 +373,47 @@ export class City {
     const mesh = new THREE.Mesh(acc.build(), m);
     mesh.receiveShadow = true;
     this.root.add(mesh);
+  }
+
+  // praça de treino: pista de grau com marcas de distância, círculo de giro e logo pintado
+  buildPlaza() {
+    const b = this.blocks.find((x) => x.zone === 'plaza');
+    if (!b) return;
+    const acc = new GeoAcc();
+    const paint = new THREE.Color(0.82, 0.8, 0.75), yel = new THREE.Color(0.9, 0.6, 0.05), y = CURB + 0.008;
+    const lx0 = b.x0 + 10, lx1 = b.x1 - 10, lz = b.z0 + 16;
+    // pista reta (leste-oeste) com marcas a cada 10 m
+    acc.rect(lx0, lx1, lz - 3.2, lz - 3.0, y, paint);
+    acc.rect(lx0, lx1, lz + 3.0, lz + 3.2, y, paint);
+    for (let x = lx0; x <= lx1; x += 10) acc.rect(x - 0.12, x + 0.12, lz - 3.2, lz + 3.2, y, yel);
+    acc.rect(lx0 - 0.3, lx0 + 0.3, lz - 3.2, lz + 3.2, y, paint);
+    // círculo para grau de giro
+    const cx = (b.x0 + b.x1) / 2 + 8, cz = (b.z0 + b.z1) / 2 + 10, R = 13;
+    for (let i = 0; i < 64; i++) {
+      const a0 = (i / 64) * Math.PI * 2, a1 = ((i + 1) / 64) * Math.PI * 2;
+      for (const [r0, r1] of [[R - 0.15, R + 0.15], [R * 0.5 - 0.12, R * 0.5 + 0.12]]) {
+        acc.quad([[cx + Math.cos(a0) * r0, y, cz + Math.sin(a0) * r0], [cx + Math.cos(a0) * r1, y, cz + Math.sin(a0) * r1], [cx + Math.cos(a1) * r1, y, cz + Math.sin(a1) * r1], [cx + Math.cos(a1) * r0, y, cz + Math.sin(a1) * r0]].reverse(), [0, 1, 0], [[0, 0], [1, 0], [1, 1], [0, 1]], i % 4 < 2 ? paint : yel);
+      }
+    }
+    const m = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.6, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+    const mesh = new THREE.Mesh(acc.build(), m);
+    mesh.receiveShadow = true;
+    this.root.add(mesh);
+    // logo pintado no chão
+    const cv = document.createElement('canvas'); cv.width = 1024; cv.height = 256;
+    const x = cv.getContext('2d');
+    x.font = 'italic 900 170px Inter, Arial, sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle';
+    const gr = x.createLinearGradient(200, 0, 824, 0); gr.addColorStop(0, '#ff4f8b'); gr.addColorStop(1, '#ff9a3c');
+    x.fillStyle = 'rgba(240,236,228,0.92)'; x.fillText('GRAU', 330, 128);
+    x.fillStyle = gr; x.fillText('LIVRE', 700, 128);
+    const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8;
+    const logo = new THREE.Mesh(new THREE.PlaneGeometry(36, 9), new THREE.MeshStandardMaterial({ map: t, transparent: true, roughness: 0.6, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3 }));
+    logo.rotation.x = -Math.PI / 2;
+    logo.rotation.z = Math.PI / 2;
+    logo.position.set(b.x1 - 14, CURB + 0.01, (b.z0 + b.z1) / 2 + 6);
+    logo.receiveShadow = true;
+    this.root.add(logo);
+    this.plazaLane = { x0: lx0, x1: lx1, z: lz };
   }
 
   // -------------------------------------------------------------------------
