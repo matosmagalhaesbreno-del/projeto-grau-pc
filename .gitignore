@@ -1,2 +1,5 @@
 node_modules/
 dist/
+assets/models/raw/
+__pycache__/
+*.pyc

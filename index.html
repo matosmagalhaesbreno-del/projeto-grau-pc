@@ -9,104 +9,130 @@
 <body>
 <canvas id="game"></canvas>
 
+<!-- Carregamento -->
+<div id="loading" class="screen show">
+  <div class="loadBox">
+    <div class="logo">GRAU<span>LIVRE</span></div>
+    <div class="loadBar"><div id="loadFill"></div></div>
+    <div id="loadText" class="dim">Preparando…</div>
+  </div>
+</div>
+
 <!-- HUD -->
 <div id="hud" class="hidden">
-  <div id="mission" class="panel">
-    <div class="label">MISSÃO <span id="missionNum"></span></div>
-    <div id="missionText"></div>
-    <div class="bar"><div id="missionBar"></div></div>
+  <div id="mission" class="glass">
+    <div class="tagline">MISSÃO <span id="mNum"></span></div>
+    <div id="mText"></div>
+    <div class="bar"><i id="mBar"></i></div>
   </div>
-
-  <div id="wallet" class="panel">
-    <div class="money">R$ <span id="money">0</span></div>
-    <div class="small">Melhor grau: <span id="bestTime">0.0</span>s · <span id="bestDist">0</span>m</div>
+  <div id="wallet" class="glass">
+    <div id="money">R$ 0</div>
+    <div class="dim small" id="clock">17:30</div>
   </div>
-
-  <div id="combo" class="hidden">
-    <div id="comboPts">0</div>
-    <div id="comboMult">x1</div>
-    <div id="comboInfo">0.0s · 0m</div>
-    <div id="comboZone">ZONA DO GRAU</div>
+  <div id="combo">
+    <div id="cTrick"></div>
+    <div id="cPts">0</div>
+    <div id="cMult">x1</div>
+    <div id="cInfo"></div>
   </div>
-
-  <canvas id="minimap" width="180" height="180"></canvas>
-
-  <div id="dash" class="panel">
-    <canvas id="gauge" width="170" height="170"></canvas>
-    <div id="speedBox">
-      <div id="speed">0</div>
-      <div class="small">km/h · <span id="gear">N</span></div>
-      <div id="angle">0°</div>
+  <div id="feed"></div>
+  <canvas id="minimap" width="200" height="200"></canvas>
+  <div id="cluster">
+    <div id="angle"><div id="angleTrack"><i id="angleBal"></i><i id="angleTail"></i><b id="angleNeedle"></b></div><span id="angleDeg">0°</span></div>
+    <div id="speedo">
+      <svg viewBox="0 0 220 220" id="tach">
+        <path id="tachBg" d="" />
+        <path id="tachRed" d="" />
+        <path id="tachFill" d="" />
+      </svg>
+      <div id="spd">0</div>
+      <div id="unit">km/h</div>
+      <div id="gear">N</div>
+      <div id="rpm" class="dim">0 rpm</div>
+      <div id="shiftLight"></div>
     </div>
   </div>
-
-  <div id="toasts"></div>
-  <div id="crash" class="hidden">CAIU!</div>
-  <div id="keyhint">W acelera · ESPAÇO puxa o grau · S freio traseiro · A/D vira · C câmera · ESC pausa</div>
+  <div id="crash" class="hidden"></div>
+  <div id="hint">W acelera · Q joga o corpo pra trás (grau) · S freio traseiro · ESPAÇO freio dianteiro · SHIFT embreagem · C câmera · ESC pausa</div>
+  <div id="fps" class="hidden"></div>
 </div>
 
 <!-- Menu principal -->
 <div id="menu" class="screen">
-  <div class="menuBox">
-    <h1>GRAU<span>LIVRE</span></h1>
-    <p class="tag">Empina, equilibra, raspa e não cai.</p>
-    <button data-act="play" class="primary">JOGAR</button>
-    <button data-act="garage">GARAGEM</button>
-    <button data-act="help">CONTROLES</button>
-    <div class="small dim" id="menuMoney"></div>
+  <div class="side">
+    <div class="logo big">GRAU<span>LIVRE</span></div>
+    <p class="sub">Orla, sol se pondo e a moto empinada.</p>
+    <nav>
+      <button data-act="play" class="primary">JOGAR</button>
+      <button data-act="garage">GARAGEM</button>
+      <button data-act="settings">CONFIGURAÇÕES</button>
+      <button data-act="controls">CONTROLES</button>
+      <button data-act="quit" id="quitBtn" class="hidden">SAIR</button>
+    </nav>
+    <div class="dim small" id="menuInfo"></div>
   </div>
 </div>
 
 <!-- Pausa -->
-<div id="pause" class="screen hidden">
-  <div class="menuBox">
+<div id="pause" class="screen">
+  <div class="side">
     <h2>PAUSADO</h2>
-    <button data-act="resume" class="primary">CONTINUAR</button>
-    <button data-act="garage">GARAGEM</button>
-    <button data-act="night">ALTERNAR DIA / NOITE</button>
-    <button data-act="sound">SOM: <span id="soundState">LIGADO</span></button>
-    <button data-act="help">CONTROLES</button>
-    <button data-act="reset" class="danger">APAGAR PROGRESSO</button>
-  </div>
-</div>
-
-<!-- Controles -->
-<div id="help" class="screen hidden">
-  <div class="menuBox wide">
-    <h2>CONTROLES</h2>
-    <table>
-      <tr><td><kbd>W</kbd> / <kbd>↑</kbd></td><td>Acelerar (também levanta a frente)</td></tr>
-      <tr><td><kbd>ESPAÇO</kbd></td><td>Puxar o grau (jogar o corpo pra trás)</td></tr>
-      <tr><td><kbd>S</kbd> / <kbd>↓</kbd></td><td>Freio traseiro: abaixa a frente / freia</td></tr>
-      <tr><td><kbd>A</kbd> <kbd>D</kbd> / <kbd>←</kbd> <kbd>→</kbd></td><td>Virar</td></tr>
-      <tr><td><kbd>C</kbd></td><td>Trocar câmera (atrás, lateral, alta, primeira pessoa)</td></tr>
-      <tr><td><kbd>N</kbd></td><td>Dia / noite</td></tr>
-      <tr><td><kbd>R</kbd></td><td>Reposicionar a moto</td></tr>
-      <tr><td><kbd>M</kbd></td><td>Som liga/desliga</td></tr>
-      <tr><td><kbd>ESC</kbd></td><td>Pausa</td></tr>
-      <tr><td>Controle</td><td>RT acelera · LT freia · A puxa o grau · analógico vira · Y câmera · START pausa</td></tr>
-    </table>
-    <p class="small">Dica: segure <b>W</b> para empinar e dê toques no <b>ESPAÇO</b> para subir mais. Mantenha o ponteiro na faixa verde
-    (45°–80°) para pontuar em dobro. Passou de 95°? Cai pra trás. Use o <b>S</b> para salvar o grau.
-    Passar raspando nos carros durante o grau dá bônus.</p>
-    <button data-act="back" class="primary">VOLTAR</button>
+    <nav>
+      <button data-act="resume" class="primary">CONTINUAR</button>
+      <button data-act="garage">GARAGEM</button>
+      <button data-act="settings">CONFIGURAÇÕES</button>
+      <button data-act="controls">CONTROLES</button>
+      <button data-act="respawn">VOLTAR À PRAÇA</button>
+      <button data-act="menu">MENU PRINCIPAL</button>
+    </nav>
   </div>
 </div>
 
 <!-- Garagem -->
-<div id="garage" class="screen hidden">
-  <div id="garagePanel">
-    <div class="gHead">
-      <h2>GARAGEM</h2>
-      <div class="money">R$ <span id="gMoney">0</span></div>
-    </div>
+<div id="garage" class="screen">
+  <div class="panel right">
+    <div class="phead"><h2>GARAGEM</h2><div id="gMoney" class="money"></div></div>
     <div id="bikeList"></div>
-    <div id="bikeDetail"></div>
-    <button data-act="back" class="primary">VOLTAR</button>
+    <div id="bikeInfo"></div>
+    <div class="row end"><button data-act="back" class="primary">VOLTAR</button></div>
   </div>
 </div>
 
-<script src="vendor/three.min.js"></script>
-<script src="js/game.js"></script>
+<!-- Configurações -->
+<div id="settings" class="screen">
+  <div class="panel right wide">
+    <div class="phead"><h2>CONFIGURAÇÕES</h2></div>
+    <div id="settingsBody"></div>
+    <div class="row end"><button data-act="back" class="primary">VOLTAR</button></div>
+  </div>
+</div>
+
+<!-- Controles -->
+<div id="controls" class="screen">
+  <div class="panel right wide">
+    <div class="phead"><h2>CONTROLES</h2></div>
+    <table class="keys">
+      <tr><td><kbd>W</kbd></td><td>Acelerar</td></tr>
+      <tr><td><kbd>Q</kbd> / <kbd>Ctrl</kbd></td><td>Jogar o corpo para trás: ajuda a levantar e segurar o grau</td></tr>
+      <tr><td><kbd>E</kbd></td><td>Jogar o corpo para frente: baixa o grau / ajuda no stoppie</td></tr>
+      <tr><td><kbd>S</kbd></td><td>Freio traseiro: abaixa a frente no grau (salva da rabeta)</td></tr>
+      <tr><td><kbd>Espaço</kbd></td><td>Freio dianteiro: forte faz stoppie</td></tr>
+      <tr><td><kbd>Shift</kbd></td><td>Embreagem: segure, acelere e solte para o grau de embreagem</td></tr>
+      <tr><td><kbd>A</kbd> <kbd>D</kbd></td><td>Inclinar / virar</td></tr>
+      <tr><td><kbd>Z</kbd> <kbd>X</kbd></td><td>Reduzir / subir marcha (câmbio manual)</td></tr>
+      <tr><td><kbd>C</kbd></td><td>Câmera (perseguição, perto, lateral, capacete, alta)</td></tr>
+      <tr><td>Botão direito do mouse</td><td>Girar a câmera em volta da moto</td></tr>
+      <tr><td><kbd>H</kbd></td><td>Buzina</td></tr>
+      <tr><td><kbd>R</kbd></td><td>Reposicionar</td></tr>
+      <tr><td><kbd>F3</kbd></td><td>Mostrar FPS</td></tr>
+      <tr><td><kbd>Esc</kbd></td><td>Pausa</td></tr>
+      <tr><td>Controle</td><td>RT acelera · LT freio dianteiro · RB/B freio traseiro · LB embreagem · analógico esq. vira · analógico dir. (vertical) peso do corpo · A/X marchas · Y câmera · Start pausa</td></tr>
+    </table>
+    <p class="dim small">Como dar grau: em 1ª ou 2ª, acelere e segure <b>Q</b> para jogar o corpo para trás. Mantenha o ponteiro perto da marca verde (ponto de equilíbrio) dosando o acelerador e o freio traseiro (<b>S</b>). Passando do ponto, a rabeta encosta no chão e solta faísca. Isso dá bônus, mas se bater forte você cai. Nas motos fracas (CG, Bros), use a embreagem: segure <b>Shift</b>, acelere e solte.</p>
+    <div class="row end"><button data-act="back" class="primary">VOLTAR</button></div>
+  </div>
+</div>
+
+<script src="build/grau.js"></script>
 </body>
 </html>
